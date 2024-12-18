@@ -1,0 +1,116 @@
+<?php
+ob_start();
+include "includes/session.php";
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Přihlášení</title>
+</head>
+<style>
+  form {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    margin: 0 auto;
+  }
+
+  label {
+    margin-bottom: 5px;
+  }
+
+  input {
+    margin-bottom: 10px;
+  }
+
+  button {
+    width: 100px;
+    margin: 0 auto;
+  }
+
+  form {
+    margin-top: 100px;
+    border: 0.25em solid black;
+    background-color: lightgray;
+    padding: 2em;
+    box-shadow: 1em 1em 1em darkgray;
+  }
+</style>
+
+<body>
+  <form action="" method="post" id="formular">
+    <label for="jmeno">Jméno:</label>
+    <input type="text" name="jmeno" id="jmeno">
+    <br>
+    <label for="heslo">Heslo:</label>
+    <input type="password" name="heslo" id="heslo">
+    <br>
+    <button type="submit">Login</button>
+  </form>
+</body>
+
+<script>
+  document.getElementById("formular").addEventListener("submit", function(event) {
+    const jmeno = document.getElementById("jmeno").value;
+    const heslo = document.getElementById("heslo").value;
+
+    let errors = [];
+
+    // check jmena jestli neni prazdne
+    if (jmeno.trim() === "") {
+      errors.push("Jméno je povinné.");
+    }
+    // check hesla jestli neni prazdne
+    if (heslo.trim() === "") {
+      errors.push("Heslo je povinné.");
+    }
+    if (errors.length > 0) {
+      event.preventDefault(); // zabrani odeslani formulare
+      alert(errors.join("\n"));
+    }
+  });
+</script>
+
+<?php
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  $jmeno = $_POST['jmeno'];
+  $heslo = $_POST['heslo'];
+
+  // Příprava a provedení SQL dotazu
+  $sql = "SELECT * FROM users WHERE jmeno = ?";
+  $stmt = $conn->prepare($sql);
+  if ($stmt) {
+    $stmt->bind_param("s", $jmeno);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+      $row = $result->fetch_assoc();
+      if (password_verify($heslo, $row['heslo'])) {
+        // Přihlášení úspěšné
+        $_SESSION['username'] = $jmeno;
+        $_SESSION['admin'] = (int)$row['admin']; // Uložení admin statusu do session
+        header("Location: dashboard.php");
+        exit();
+      } else {
+        echo "Nesprávné heslo.<br>";
+      }
+    } else {
+      echo "Uživatelské jméno neexistuje.<br>";
+    }
+
+    $stmt->close();
+  } else {
+    echo "Chyba při přípravě dotazu: " . $conn->error . "<br>";
+  }
+}
+
+$conn->close();
+ob_end_flush();
+?>
+
+</html>

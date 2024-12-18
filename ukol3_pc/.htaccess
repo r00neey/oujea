@@ -1,0 +1,9 @@
+# Zapnutí modulu mod_rewrite
+RewriteEngine On
+
+# Zajištění, že soubory nebo složky zůstávají přístupné
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Přepis všech požadavků, které neobsahují tečku, na .php soubor
+RewriteRule ^([^/]+)/?$ $1.php [L]
